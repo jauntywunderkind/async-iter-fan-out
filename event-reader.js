@@ -1,6 +1,6 @@
 import Periodic from "./periodic.js"
 
-function AsyncIterEventReaders( ...opt){
+function AsyncIterEventReader( ...opt){
 	this.listeners= {}
 	this.events= []
 	this.iterators= {}
@@ -11,7 +11,22 @@ function AsyncIterEventReaders( ...opt){
 	this._gc= this._gc.bind( this)
 	this._ungc= Periodic( this._gc)
 }
-AsyncIterEventReaders.prototype._listenToEvent= function( evt/*name*/, emitter= this){
+
+AsyncIterEventReader.prototype.iterator= function( name){
+	let listener= this.listeners[ evt]
+	if( !listener){
+		listener= this._listenToEvent( evt)
+	}
+	let iterators= this.iterators[ evt]
+	if( !iterators){
+		iterators= this.iterators[ evt]= []
+	}
+	const iterator= new Iterator( this, listener)
+	iterators.push( iterator)
+	return iterator
+}
+
+AsyncIterEventReader.prototype._listenToEvent= function( evt/*name*/, emitter= this){
 	const old= this.listeners[ evt]
 	if( old){
 		return old
@@ -23,6 +38,7 @@ AsyncIterEventReaders.prototype._listenToEvent= function( evt/*name*/, emitter= 
 	this.listeners[ evt]= listener
 	// use listener
 	emitter.on( listener.evt, listener.handler
+	return listener
 }
 
 AsyncIterEventReader.prototype._acceptEvent= function( e){
@@ -54,9 +70,12 @@ Listener.prototype.handler= function( data){
 }
 
 function Iterator( evt/*name*/){
-	if( !this.listeners[ evt]){
-		this._listenToEvenT( evt)
-	}
 	this.listeners[ evt].iterators++
 }
 
+Iterator.prototype.next= function(){
+}
+Iterator.prototype.return= function( val){
+}
+Iterator.prototype.throw= function( ex){
+}
