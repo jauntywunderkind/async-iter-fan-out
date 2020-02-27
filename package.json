@@ -1,0 +1,19 @@
+{
+	"name": "async-iter-event-reader",
+	"version": "1.0.0",
+	"description": "multiple async-iterators from an even target/emitter",
+	"main": "async-iter-event-reader.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://archive.voodoowarez.com/async-iter-event-reader"
+	},
+	"keywords": [],
+	"author": "jauntywunderkind",
+	"license": "MIT",
+	"module": "async-iter-event-reader.js",
+	"esm": true,
+	"type": "module"
+}
