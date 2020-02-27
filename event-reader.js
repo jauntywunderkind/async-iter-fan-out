@@ -1,3 +1,5 @@
+import Periodic from "./periodic.js"
+
 function AsyncIterEventReaders( ...opt){
 	this.listeners= {}
 	this.events= []
@@ -6,6 +8,8 @@ function AsyncIterEventReaders( ...opt){
 	this.cleaned= 0 // number of events removed from `events`
 
 	this._acceptEvent= this._acceptEvent.bind( this)
+	this._gc= this._gc.bind( this)
+	this._ungc= Periodic( this._gc)
 }
 AsyncIterEventReaders.prototype._listenToEvent= function( evt/*name*/, emitter= this){
 	const old= this.listeners[ evt]
@@ -27,6 +31,17 @@ AsyncIterEventReader.prototype._acceptEvent= function( e){
 	this.events.push( e)
 }
 
+AsyncIterEventReader.prototype._gc= function(){
+	let n= 0
+	while( this.events[ n]&& this.events[ n].rc=== 0){
+		++n
+	}
+	if( n> 0){
+		this.events.splice( 0, n)
+		this.cleaned+= n
+	}
+}
+
 function Listener( evt, acceptEvent){
 	this.evt= evt
 	this.acceptEvent= acceptEvent
@@ -43,6 +58,5 @@ function Iterator( evt/*name*/){
 		this._listenToEvenT( evt)
 	}
 	this.listeners[ evt].iterators++
-
 }
 
