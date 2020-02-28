@@ -1,81 +1,101 @@
-import Periodic from "./periodic.js"
+import Denque from "denque"
 
-function AsyncIterEventReader( ...opt){
-	this.listeners= {}
-	this.events= []
-	this.iterators= {}
-	this.seq= 0 // current event number
-	this.cleaned= 0 // number of events removed from `events`
-
-	this._acceptEvent= this._acceptEvent.bind( this)
-	this._gc= this._gc.bind( this)
-	this._ungc= Periodic( this._gc)
+function EventReader( opt){
+	Object.assign( this, {
+		emitter: this,
+		listeners: {}
+	}, opt)
 }
 
-AsyncIterEventReader.prototype.iterator= function( name){
-	let listener= this.listeners[ evt]
-	if( !listener){
-		listener= this._listenToEvent( evt)
-	}
-	let iterators= this.iterators[ evt]
-	if( !iterators){
-		iterators= this.iterators[ evt]= []
-	}
-	const iterator= new Iterator( this, listener)
-	iterators.push( iterator)
-	return iterator
+EventReader.prototype.iterator= function( type){
+	const listener= this.listener( type)
+	return listener.iterator()
 }
 
-AsyncIterEventReader.prototype._listenToEvent= function( evt/*name*/, emitter= this){
-	const old= this.listeners[ evt]
+EventReader.prototype.listener= function( type){
+	const old= this.listeners[ type]
 	if( old){
 		return old
 	}
 
 	// build listener record
-	const listener= new Listener( evt, this._acceptEvent)
+	const listener= new EventReaderListener( type, this)
 	// store listener
-	this.listeners[ evt]= listener
+	this.listeners[ type]= listener
 	// use listener
-	emitter.on( listener.evt, listener.handler
+	if( this.emitter.addEventListener){
+		this.emitter.addEventListener( type, listener.handler,{ passive: true})
+	}else{
+		this.emitter.on( type, listener.handler)
+	}
 	return listener
 }
 
-AsyncIterEventReader.prototype._acceptEvent= function( e){
-	e.seq= ++this.seq
-	e.rc= this.iterators[ e.evt].length
-	this.events.push( e)
-}
+function EventReaderListener( type, eventReader){
+	this.events= new Deque()
+	this.iterators= []
+	this.seq= 0
+	this.type= type
 
-AsyncIterEventReader.prototype._gc= function(){
-	let n= 0
-	while( this.events[ n]&& this.events[ n].rc=== 0){
-		++n
-	}
-	if( n> 0){
-		this.events.splice( 0, n)
-		this.cleaned+= n
-	}
-}
-
-function Listener( evt, acceptEvent){
-	this.evt= evt
-	this.acceptEvent= acceptEvent
-
-	this.iterators= 0
 	this.handler= this.handler.bind( this)
 }
-Listener.prototype.handler= function( data){
-	this.acceptEvent({ data, evt: this.evt})
+
+EventReaderListener.prototype.handler= function( data){
+	this.events.push({
+		data,
+		type: this.type,
+		rc: this.iterators.length
+	})
 }
 
-function Iterator( evt/*name*/){
-	this.listeners[ evt].iterators++
+EventReaderListener.prototype.iterator= function(){
+	const iterator= new EventReaderIterator( this)
+	this.iterators.push( iterator)
+	this._startIterator( iterator)
+	return iterator
 }
 
-Iterator.prototype.next= function(){
+EventReaderListener.Iteration= {
+	/**
+	* Post-iteration hook to remove events with an `rc` of 0
+	*/
+	PostRemove(){
+		while( this.events.length&& this.events.peekFront().rc=== 0){
+			this.events.unshift()
+			++this.seq
+		}
+	}
 }
-Iterator.prototype.return= function( val){
+
+EventReaderListener.prototype._postIteration= EventReaderListener.Iteration.PostRemove
+
+EventReaderListener.Iterator= {
+	/**
+	* Start-iterator hook to read any & all current events
+	*/
+	StartAll( iterator){
+		iterator.seq= this.seq
+		for( let i= 0; i< this.events.length; ++i){
+			++this.events.peekAt( i).rc
+		}
+	},
+	/**
+	* Start-iterator hook to read only values which have not been read
+	*/
+	StartNew( iterator){
+		iterator.seq= this.seq+ this.events.length
+	}
 }
-Iterator.prototype.throw= function( ex){
+
+EventReaderListener.prototype._startIterator= EventReaderListener.Iterator.StartAll
+
+function EventReaderIterator( listener){
+	this.listener= listener
+}
+
+EventReaderIterator.prototype.next= function(){
+}
+EventReaderIterator.prototype.return= function( val){
+}
+EventReaderIterator.prototype.throw= function( ex){
 }

@@ -15,5 +15,8 @@
 	"license": "MIT",
 	"module": "async-iter-event-reader.js",
 	"esm": true,
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"denque": "^1.4.1"
+	}
 }
