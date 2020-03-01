@@ -1,7 +1,7 @@
 import Denque from "denque"
 import Defer from "p-defer"
 
-function EventReader( opt){
+export function EventReader( opt){
 	Object.assign( this, {
 		// emitter to read events out of
 		emitter: this,
@@ -9,6 +9,7 @@ function EventReader( opt){
 		listeners: {}
 	}, opt)
 }
+export default EventReader
 
 EventReader.prototype.iterator= function( type){
 	const listener= this.listener( type)

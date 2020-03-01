@@ -4,7 +4,7 @@
 	"description": "multiple async-iterators from an even target/emitter",
 	"main": "async-iter-event-reader.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": ".test/index.js"
 	},
 	"repository": {
 		"type": "git",
