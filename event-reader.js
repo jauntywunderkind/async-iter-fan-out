@@ -11,6 +11,11 @@ export function EventReader( opt){
 }
 export default EventReader
 
+//EventReader.mixinType= function( klass){
+//}
+//EventReader.mixinObject= function( o){
+//}
+
 EventReader.prototype.iterator= function( type){
 	const listener= this.listener( type)
 	return listener.iterator()
@@ -40,7 +45,7 @@ EventReader.prototype.listener= function( type){
 	return listener
 }
 
-function EventReaderListener( type, eventReader){
+function EventReaderListener( type){
 	// events to be read out
 	this.events= new Denque()
 	// collection of all iterators
@@ -105,10 +110,21 @@ EventReaderListener.Iterator= {
 	*/
 	StartNew( iterator){
 		iterator.seq= this.seq+ this.events.length
+	},
+
+	/**
+	*/
+	Terminate( iterator){
+		const i= this.iterators.indexOf( iterator)
+		if( i=== -1){
+			return
+		}
+		this.iterators.splice( i, 1)
 	}
 }
 
 EventReaderListener.prototype._startIterator= EventReaderListener.Iterator.StartAll
+EventReaderListener.prototype._terminateIterator= EventReaderListener.Iterator.Terminate
 
 function EventReaderIterator( listener){
 	this.listener= listener
@@ -120,7 +136,7 @@ function EventReaderIterator( listener){
 EventReaderIterator.prototype.next= async function(){
 	// repeat until we get an event
 	while( true){
-		if( this.listener.done){
+		if( this.done|| !this.listener|| this.listener.done){
 			return {
 				done: true,
 				value: undefined
@@ -163,6 +179,7 @@ EventReaderIterator.prototype.next= async function(){
 EventReaderIterator.prototype.return= async function( value){
 	this.done= true
 	if( this.listener.notify){
+		// wake up up listener's iterators, as this iterator may be blocked
 		// TRADEOFF:
 		// so this implies that really notify is a per iterator event
 		// but such an impl would generate additional allocation pressure per iteration 
@@ -170,6 +187,8 @@ EventReaderIterator.prototype.return= async function( value){
 		// if many early-terminated iterations are expected this may be worth re-visiting
 		this.listener.notify.resolve()
 	}
+	this.listener._terminateIterator( this)
+	this.listener= null
 	return {
 		done: true,
 		value
@@ -178,4 +197,7 @@ EventReaderIterator.prototype.return= async function( value){
 EventReaderIterator.prototype.throw= async function( ex){
 	await this.return()
 	throw ex
+}
+EventReaderIterator.prototype[ Symbol.asyncIterator]= function(){
+	return this
 }

@@ -58,17 +58,42 @@ tape( "listeners capture latter events", async function( t){
 	t.end()
 })
 
-
 tape( "can end iteration", async function( t){
+	t.plan( 2)
 	const
 		emitter= new EventEmitter(),
 		reader= new EventReader({ emitter}),
-		iter= reader.iterator( "example")
+		iter= reader.iterator( "example"),
+		listener= iter.listener
 
 	// first value
 	const first= iter.next()
 	iter.return()
 
 	t.deepEqual( await first,{ value: undefined, done: true})
+	t.equal( listener.iterators.length, 0, "iterators.length=0")
 	t.end()
+})
+
+tape( "can for-await loop", async function( t){
+	t.plan( 3)
+	const
+		emitter= new EventEmitter(),
+		reader= new EventReader({ emitter}),
+		iter= reader.iterator( "number")
+
+	;(async function(){
+		let expected= [ 2, 4]
+		for await( let value of iter){
+			const next= expected.shift()
+			t.equal( value, next, `value=${next}`)
+		}
+		t.equal( expected.length, 0, "no more expected")
+		t.end()
+	})();
+
+	emitter.emit( "number", 2)
+	emitter.emit( "number", 4)
+	await (new Promise(res => setTimeout(res, 0)));
+	iter.return()
 })
