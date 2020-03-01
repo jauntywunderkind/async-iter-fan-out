@@ -120,6 +120,13 @@ function EventReaderIterator( listener){
 EventReaderIterator.prototype.next= async function(){
 	// repeat until we get an event
 	while( true){
+		if( this.listener.done){
+			return {
+				done: true,
+				value: undefined
+			}
+		}
+
 		// if positive, we are ahead in reading by this many
 		let min= this.seq- this.listener.seq
 		if( min< 0){
@@ -153,7 +160,22 @@ EventReaderIterator.prototype.next= async function(){
 		await this.listener.notify.promise
 	}
 }
-EventReaderIterator.prototype.return= async function( val){
+EventReaderIterator.prototype.return= async function( value){
+	this.done= true
+	if( this.listener.notify){
+		// TRADEOFF:
+		// so this implies that really notify is a per iterator event
+		// but such an impl would generate additional allocation pressure per iteration 
+		// whereas by leaving this at the listener level causes some mild extra work only when terminating an iterationwhen terminating an iteration.
+		// if many early-terminated iterations are expected this may be worth re-visiting
+		this.listener.notify.resolve()
+	}
+	return {
+		done: true,
+		value
+	}
 }
 EventReaderIterator.prototype.throw= async function( ex){
+	await this.return()
+	throw ex
 }

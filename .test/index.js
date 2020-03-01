@@ -57,3 +57,18 @@ tape( "listeners capture latter events", async function( t){
 	t.deepEqual( await first, { value: "exemplary", done: false})
 	t.end()
 })
+
+
+tape( "can end iteration", async function( t){
+	const
+		emitter= new EventEmitter(),
+		reader= new EventReader({ emitter}),
+		iter= reader.iterator( "example")
+
+	// first value
+	const first= iter.next()
+	iter.return()
+
+	t.deepEqual( await first,{ value: undefined, done: true})
+	t.end()
+})
