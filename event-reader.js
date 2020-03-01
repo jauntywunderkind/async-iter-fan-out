@@ -17,6 +17,10 @@ EventReader.prototype.iterator= function( type){
 }
 
 EventReader.prototype.listener= function( type){
+	if( !this.emitter|| !(this.emitter.addEventListener|| this.emitter.addListener)){
+		throw new Error("No emitter found")
+	}
+
 	const old= this.listeners[ type]
 	if( old){
 		return old
@@ -29,15 +33,16 @@ EventReader.prototype.listener= function( type){
 	// use listener
 	if( this.emitter.addEventListener){
 		this.emitter.addEventListener( type, listener.handler,{ passive: true})
-	}else{
+	}else if( this.emitter.addListener){
 		this.emitter.on( type, listener.handler)
+	}else{
 	}
 	return listener
 }
 
 function EventReaderListener( type, eventReader){
 	// events to be read out
-	this.events= new Deque()
+	this.events= new Denque()
 	// collection of all iterators
 	this.iterators= []
 	// number of items removed from queue
@@ -54,7 +59,7 @@ EventReaderListener.prototype.handler= function( data){
 	// store event for iterators
 	this.events.push({
 		data,
-		type: this.type,
+		//type: this.type,
 		rc: this.iterators.length
 	})
 	if( this.notify){
@@ -77,7 +82,7 @@ EventReaderListener.Iteration= {
 	*/
 	PostRemove(){
 		while( this.events.length&& this.events.peekFront().rc=== 0){
-			this.events.unshift()
+			this.events.shift()
 			++this.seq
 		}
 	}
@@ -117,7 +122,7 @@ EventReaderIterator.prototype.next= async function(){
 	while( true){
 		// if positive, we are ahead in reading by this many
 		let min= this.seq- this.listener.seq
-		if( min< 1){
+		if( min< 0){
 			// negative is unexpected: the listener has dequeued events before we saw them
 			this.seq= this.listener.seq
 			min= 0
@@ -125,16 +130,16 @@ EventReaderIterator.prototype.next= async function(){
 
 		// check for an available event
 		if( this.listener.events.length> min){
-			const value= this.listener.events.peekAt( min)
+			const wrapped= this.listener.events.peekAt( min)
 			// saw another event
 			++this.seq
 			// mark on the event that it's been seen
-			--value.rc
+			--wrapped.rc
 			// run post iteration hook
 			this.listener._postIteration()
 			return {
 				done: false,
-				value
+				value: wrapped.data
 			}
 		}
 
