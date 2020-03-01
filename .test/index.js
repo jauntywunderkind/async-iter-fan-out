@@ -97,3 +97,27 @@ tape( "can for-await loop", async function( t){
 	await (new Promise(res => setTimeout(res, 0)));
 	iter.return()
 })
+
+
+tape( "multiple consumers", async function( t){
+	t.plan( 6)
+	const
+		emitter= new EventEmitter(),
+		reader= new EventReader({ emitter})
+
+	async function doReader( name, type= "number"){
+		let expected= [ 3, 6]
+		for await( let value of reader.iterator( type)){
+			const next= expected.shift()
+			t.equal( value, next, `${name} value=${next}`)
+		}
+		t.equal( expected.length, 0, `${name} no more expected`)
+	}
+	doReader("a")
+	doReader("b")
+
+	emitter.emit( "number", 3)
+	emitter.emit( "number", 6)
+	await (new Promise(res => setTimeout(res, 0)));
+	reader.listeners.number.end()
+})

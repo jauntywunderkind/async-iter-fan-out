@@ -76,9 +76,20 @@ EventReaderListener.prototype.handler= function( data){
 
 EventReaderListener.prototype.iterator= function(){
 	const iterator= new EventReaderIterator( this)
+	if( this.done){
+		return iterator
+	}
+
 	this.iterators.push( iterator)
 	this._startIterator( iterator)
 	return iterator
+}
+
+EventReaderListener.prototype.end= function(){
+	for( let iter of this.iterators){
+		iter.return()
+	}
+	this.done= true
 }
 
 EventReaderListener.Iteration= {
