@@ -1,16 +1,16 @@
+import EventReader from "./event-reader.js"
+
 /** create a new class derived from `klass` that mixes in `EventReader` */
-export function mixinEventReaderType( klass){
+export function mixinEventReaderType( klass, mapArgs){
 	const mixed= ({[ klass.name]: class extends klass{
 		constructor( ...arg){
-			if( this._onArg){
-				const [superArg, readerArg] = this._onArg.call( this, ...arg)
-			}
-			constructor.super_.call( this, ...(superArg|| []))
-			EventReader.call( this, ..(readerArg|| []))
+			let mappedArgs
+			super(...(( mappedArgs= mapArgs&& mapArgs( arg)|| [ arg, arg])[ 0]))
+			EventReader.call( this, ...(mappedArgs[ 1]|| []))
 		}
 	}})[ klass.name]
 	const props= Object.getOwnPropertyDescriptors( EventReader.prototype)
 	Object.defineProperties( mixed.prototype, props)
-	throw new Error("Not implemented")
+	return mixed
 }
-export default mixinEventReader
+export default mixinEventReaderType

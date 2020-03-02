@@ -11,10 +11,12 @@ export function EventReader( opt){
 }
 export default EventReader
 
-//EventReader.mixinType= function( klass){
-//}
-//EventReader.mixinObject= function( o){
-//}
+EventReader.mixinType= async function( klass){
+	return (await import( "./mixin-type.js")).default( klass)
+}
+EventReader.mixinObject= async function( o){
+	return (await import( "./mixin-obj.js")).default( klass)
+}
 
 EventReader.prototype.iterator= function( type){
 	const listener= this.listener( type)
