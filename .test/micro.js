@@ -1,41 +1,45 @@
 #!/usr/bin/env node
-/** @module - tests of basic functionality */
+/** @module - very small tests of the the api surface */
 
 import tape from "tape"
 import EventReader from "../event-reader.js"
 import { EventEmitter} from "events"
 
-tape( "listeners capture latter events", async function( t){
+tape( "fails without emitter", function( t){
+	t.plan( 1)
+	const reader= new EventReader()
+	try{
+		reader.listener("nope")
+		t.fail("got a listener")
+	}catch(ex){
+		t.pass("properly failed to get a listener")
+	}
+})
+
+tape( "provide `emitter` to constructor", function( t){
 	const
 		emitter= new EventEmitter(),
 		reader= new EventReader({ emitter})
-	// create listener
 	reader.listener( "example")
-	// send the event
-	emitter.emit( "example", "exemplary")
-
-	// now iterate it
-	const
-		iter= reader.iterator( "example"),
-		first= iter.next()
-	t.deepEqual( await first, { value: "exemplary", done: false})
 	t.end()
 })
 
-tape( "can end iteration", async function( t){
-	t.plan( 2)
+tape( "get an iterator", function( t){
+	const
+		emitter= new EventEmitter(),
+		reader= new EventReader({ emitter}),
+		iter= reader.iterator( "example")
+	t.end()
+})
+
+tape( "iterator can see an event", async function( t){
 	const
 		emitter= new EventEmitter(),
 		reader= new EventReader({ emitter}),
 		iter= reader.iterator( "example"),
-		listener= iter.listener
-
-	// first value
-	const first= iter.next()
-	iter.return()
-
-	t.deepEqual( await first,{ value: undefined, done: true})
-	t.equal( listener.iterators.length, 0, "iterators.length=0")
+		first= iter.next()
+	emitter.emit( "example", "exemplary")
+	t.deepEqual( await first, { value: "exemplary", done: false})
 	t.end()
 })
 
@@ -62,6 +66,7 @@ tape( "can for-await loop", async function( t){
 	iter.return()
 })
 
+
 tape( "multiple consumers", async function( t){
 	t.plan( 6)
 	const
@@ -76,7 +81,6 @@ tape( "multiple consumers", async function( t){
 		}
 		t.equal( expected.length, 0, `${name} no more expected`)
 	}
-	// this is what this library was actually written to do
 	doReader("a")
 	doReader("b")
 

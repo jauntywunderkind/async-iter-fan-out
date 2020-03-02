@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { EventEmitter} from "events"
 import tape from "tape"
 import EventReader from "../event-reader.js"
