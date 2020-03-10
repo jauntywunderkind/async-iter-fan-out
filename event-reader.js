@@ -47,7 +47,7 @@ EventReader.prototype.listener= function( type){
 	return listener
 }
 
-function EventReaderListener( type){
+export function EventReaderListener( type){
 	// events to be read out
 	this.events= new Denque()
 	// collection of all iterators
@@ -139,7 +139,7 @@ EventReaderListener.Iterator= {
 EventReaderListener.prototype._startIterator= EventReaderListener.Iterator.StartAll
 EventReaderListener.prototype._terminateIterator= EventReaderListener.Iterator.Terminate
 
-function EventReaderIterator( listener){
+export function EventReaderIterator( listener){
 	this.listener= listener
 	// number of events on listener that have gone by for this iterator
 	// different _startIterator hooks are likely to munge this
