@@ -1,19 +1,19 @@
 {
-	"name": "async-iter-event-reader",
+	"name": "async-iter-fan-out",
 	"version": "1.0.0",
 	"description": "multiple async-iterators from an even target/emitter",
-	"main": "async-iter-event-reader.js",
+	"main": "async-iter-fan-out.js",
 	"scripts": {
 		"test": ".test/index.js"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://archive.voodoowarez.com/async-iter-event-reader"
+		"url": "https://archive.voodoowarez.com/async-iter-fan-out"
 	},
 	"keywords": [],
 	"author": "jauntywunderkind",
 	"license": "MIT",
-	"module": "async-iter-event-reader.js",
+	"module": "async-iter-fan-out.js",
 	"esm": true,
 	"type": "module",
 	"dependencies": {
