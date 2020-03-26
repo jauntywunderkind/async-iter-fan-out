@@ -1,17 +1,17 @@
-import EventReader from "./event-reader.js"
+import FanOut from "./event-reader.js"
 
-/** create a new class derived from `klass` that mixes in `EventReader` */
-export function mixonEventReaderType( klass, mapArgs){
+/** create a new class derived from `klass` that mixes in `FanOut` */
+export function mixonFanOutType( klass, mapArgs){
 	const mixed= ({[ klass.name]: class extends klass{
 		constructor( ...arg){
 			let mappedArgs
 			super(...(( mappedArgs= mapArgs&& mapArgs( arg)|| [ arg, arg])[ 0]))
-			EventReader.call( this, ...(mappedArgs[ 1]|| []))
+			FanOut.call( this, ...(mappedArgs[ 1]|| []))
 			return this
 		}
 	}})[ klass.name]
-	const props= Object.getOwnPropertyDescriptors( EventReader.prototype)
+	const props= Object.getOwnPropertyDescriptors( FanOut.prototype)
 	Object.defineProperties( mixed.prototype, props)
 	return mixed
 }
-export default mixinEventReaderType
+export default mixinFanOutType

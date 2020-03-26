@@ -2,21 +2,17 @@
 /** @module - tests of basic functionality */
 
 import tape from "tape"
-import EventReader from "../event-reader.js"
-import { EventEmitter} from "events"
+import FanOut from "../fan-out.js"
 
 tape( "listeners capture latter events", async function( t){
-	const
-		emitter= new EventEmitter(),
-		reader= new EventReader({ emitter})
-	// create listener
-	reader.listener( "example")
+	const fanOut= new FanOut()
+	fanOut._startIterator= FanOut.Iterator.StartAll
 	// send the event
-	emitter.emit( "example", "exemplary")
+	fanOut.push( "exemplary")
 
 	// now iterate it
 	const
-		iter= reader.iterator( "example"),
+		iter= fanOut[ Symbol.asyncIterator](),
 		first= iter.next()
 	t.deepEqual( await first, { value: "exemplary", done: false})
 	t.end()
@@ -25,26 +21,23 @@ tape( "listeners capture latter events", async function( t){
 tape( "can end iteration", async function( t){
 	t.plan( 2)
 	const
-		emitter= new EventEmitter(),
-		reader= new EventReader({ emitter}),
-		iter= reader.iterator( "example"),
-		listener= iter.listener
+		fanOut= new FanOut(),
+		iter= fanOut[ Symbol.asyncIterator]()
 
 	// first value
 	const first= iter.next()
 	iter.return()
 
 	t.deepEqual( await first,{ value: undefined, done: true})
-	t.equal( listener.iterators.length, 0, "iterators.length=0")
+	t.equal( fanOut.iterators.length, 0, "iterators.length=0")
 	t.end()
 })
 
 tape( "can for-await loop", async function( t){
 	t.plan( 3)
 	const
-		emitter= new EventEmitter(),
-		reader= new EventReader({ emitter}),
-		iter= reader.iterator( "number")
+		fanOut= new FanOut(),
+		iter= fanOut[ Symbol.asyncIterator]()
 
 	;(async function(){
 		let expected= [ 2, 4]
@@ -56,21 +49,19 @@ tape( "can for-await loop", async function( t){
 		t.end()
 	})();
 
-	emitter.emit( "number", 2)
-	emitter.emit( "number", 4)
+	fanOut.push( 2)
+	fanOut.push( 4)
 	await (new Promise(res => setTimeout(res, 0)));
-	iter.return()
+	fanOut.end()
 })
 
 tape( "multiple consumers", async function( t){
 	t.plan( 6)
-	const
-		emitter= new EventEmitter(),
-		reader= new EventReader({ emitter})
+	const fanOut= new FanOut()
 
 	async function doReader( name, type= "number"){
 		let expected= [ 3, 6]
-		for await( let value of reader.iterator( type)){
+		for await( let value of fanOut){
 			const next= expected.shift()
 			t.equal( value, next, `${name} value=${next}`)
 		}
@@ -80,8 +71,8 @@ tape( "multiple consumers", async function( t){
 	doReader("a")
 	doReader("b")
 
-	emitter.emit( "number", 3)
-	emitter.emit( "number", 6)
+	fanOut.push( 3)
+	fanOut.push( 6)
 	await (new Promise(res => setTimeout(res, 0)));
-	reader.listeners.number.end()
+	fanOut.end()
 })
